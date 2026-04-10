@@ -22,6 +22,7 @@ class _HomePageState extends State<HomePage>
   bool _annLoaded = false;
 
   // 植物分組
+  int _plantCount = 0;
   List<String> _notCaredToday = [];
   List<String> _notCaredTooLong = [];
 
@@ -122,6 +123,7 @@ class _HomePageState extends State<HomePage>
       }
 
       setState(() {
+        _plantCount = plants.length;
         _notCaredToday = notCared;
         _notCaredTooLong = tooLong;
       });
@@ -207,6 +209,7 @@ class _HomePageState extends State<HomePage>
                           icon: Icons.access_time_rounded,
                           iconColor: AppColors.warning,
                           bgColor: AppColors.warningLight,
+                          totalPlants: _plantCount,
                           names: _notCaredToday,
                         ),
 
@@ -217,6 +220,7 @@ class _HomePageState extends State<HomePage>
                           icon: Icons.warning_amber_rounded,
                           iconColor: AppColors.error,
                           bgColor: AppColors.errorLight,
+                          totalPlants: _plantCount,
                           names: _notCaredTooLong,
                         ),
                       ],
@@ -422,6 +426,7 @@ class _CareSection extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final Color bgColor;
+  final int totalPlants;
   final List<String> names;
 
   const _CareSection({
@@ -429,6 +434,7 @@ class _CareSection extends StatelessWidget {
     required this.icon,
     required this.iconColor,
     required this.bgColor,
+    required this.totalPlants,
     required this.names,
   });
 
@@ -491,42 +497,73 @@ class _CareSection extends StatelessWidget {
           ),
 
           // 內容
-          // 內容
           if (names.isEmpty)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
               child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.successLight.withAlpha(128),
-                      shape: BoxShape.circle,
+                  if (totalPlants == 0) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceBg,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.local_florist_outlined,
+                        color: AppColors.textSecondary,
+                        size: 24,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.check_rounded,
-                      color: AppColors.success,
-                      size: 24,
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No plants yet',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'All plants are well cared!',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Go to Greenhouse to add your first plant',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Good job keeping them healthy',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.successLight.withAlpha(128),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: AppColors.success,
+                        size: 24,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'All plants are well cared!',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Good job keeping them healthy',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             )

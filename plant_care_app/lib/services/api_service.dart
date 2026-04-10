@@ -379,7 +379,8 @@ class ApiService {
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw ApiException(
-        message: data['message']?.toString() ?? 'Request failed',
+        message:
+            data['message']?.toString() ?? data['detail']?.toString() ?? 'Request failed',
         code: res.statusCode,
       );
     }
