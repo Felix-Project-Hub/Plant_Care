@@ -185,7 +185,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Plant',
+      title: 'Plant Care',
       debugShowCheckedModeBanner: false,
       theme: _theme(),
       // 用 home 進 LaunchGate，判斷要進哪頁

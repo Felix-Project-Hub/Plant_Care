@@ -254,7 +254,7 @@ class _HomePageState extends State<HomePage>
               ),
               const SizedBox(width: 10),
               Text(
-                'Plant',
+                'Plant Care',
                 style: AppText.title.copyWith(
                   fontSize: 24,
                   color: AppColors.textPrimary,

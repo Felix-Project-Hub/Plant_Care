@@ -91,7 +91,7 @@ class _LaunchGateState extends State<LaunchGate>
 
                   // APP 名稱
                   const Text(
-                    'Plant',
+                    'Plant Care',
                     style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,

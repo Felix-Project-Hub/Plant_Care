@@ -1,6 +1,6 @@
 {
-    "name": "plant",
-    "short_name": "plant",
+    "name": "Plant Care",
+    "short_name": "Plant Care",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
