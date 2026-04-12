@@ -10,12 +10,12 @@ Future<void> showAlert(
   return showDialog<void>(
     context: context,
     builder:
-        (_) => AlertDialog(
+        (dialogCtx) => AlertDialog(
           title: Text(title),
           content: Text(msg),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogCtx).pop(),
               child: const Text('OK'),
             ),
           ],
@@ -34,16 +34,16 @@ Future<bool> confirmDialog(
   final res = await showDialog<bool>(
     context: context,
     builder:
-        (_) => AlertDialog(
+        (dialogCtx) => AlertDialog(
           title: Text(title),
           content: Text(message),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
               child: Text(cancelText),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () => Navigator.of(dialogCtx).pop(true),
               child: Text(okText),
             ),
           ],
@@ -67,7 +67,7 @@ Future<void> showAnnouncementDialog(
   return showDialog<void>(
     context: context,
     builder:
-        (_) => Dialog(
+        (dialogCtx) => Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -166,7 +166,7 @@ Future<void> showAnnouncementDialog(
                 child: SizedBox(
                   width: double.infinity,
                   child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(dialogCtx).pop(),
                     style: TextButton.styleFrom(
                       backgroundColor: lightColor,
                       foregroundColor: deepColor,
