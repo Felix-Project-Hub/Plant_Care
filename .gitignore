@@ -6,9 +6,17 @@ build/
 **/.idea/
 **/.vscode/
 .trae/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 plant_care_backend/.venv/
 plant_care_backend/*.db
+plant_care_backend/*.sqlite3
 plant_care_backend/__pycache__/
 plant_care_backend/**/__pycache__/
 plant_care_backend/.env
@@ -17,3 +25,9 @@ plant_care_app/.flutter-plugins
 plant_care_app/.flutter-plugins-dependencies
 plant_care_app/.metadata
 plant_care_app/.env
+
+# Environment files: keep examples only
+.env
+.env.*
+!.env.example
+!**/.env.example

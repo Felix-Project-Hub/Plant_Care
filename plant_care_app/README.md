@@ -35,6 +35,7 @@ flutter test
 ## 環境變數
 以編譯期參數注入：
 - `API_BASE_URL`：後端 base URL（預設 `http://localhost:8000`）
+- 正式環境請使用 `https` URL，不要把正式 API 寫死在原始碼內
 
 ## 建置 / 啟動方式
 ### macOS（Debug）
@@ -50,10 +51,22 @@ flutter run -d macos --dart-define=API_BASE_URL=http://localhost:8000
 flutter build macos --debug --dart-define=API_BASE_URL=http://localhost:8000
 ```
 
+### Android（Release）
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=https://api.example.com
+```
+
+### iOS（不簽章）
+```bash
+flutter build ios --no-codesign --dart-define=API_BASE_URL=https://api.example.com
+```
+
 ## 部署細節
 上架前請確認：
 - `API_BASE_URL` 指向正式環境（建議 `https`）
 - APP 端不放置 `OPENAI_API_KEY` 等金鑰（由後端服務持有與呼叫 AI）
+- Android release signing 使用 repo 外部的 `android/key.properties` 與 keystore；可參考 `android/key.properties.example`
+- Android / iOS 正式識別已改為 `com.beioverworked.plantcare`
 
 ## 常見問題
 - 登入狀態如何保存？

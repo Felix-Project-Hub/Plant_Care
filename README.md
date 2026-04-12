@@ -90,21 +90,48 @@ flutter run -d macos --dart-define=API_BASE_URL=http://localhost:8000
 - `OPENAI_BASE_URL`：OpenAI 相容 API base URL
 - `OPENAI_MODEL`：使用的模型名稱（預設 `gpt-4o-mini`）
 
+## GitHub 上傳建議
+- 可以上傳：原始碼、平台專案檔、`pubspec.lock`、`Podfile.lock`、Alembic migration、`Dockerfile`、`docker-compose.yml`、README。
+- 不要上傳：任何 `.env`、`plant_care_backend/.venv/`、本機資料庫、Flutter `build/`、`.dart_tool/`、`.metadata`、IDE 暫存與測試/覆蓋率產物。
+- `plant_care_backend/.env` 僅供本機使用；正式部署請改由 Coolify 環境變數注入。
+- 若 `.env` 曾放過真實金鑰或 SMTP 密碼，部署前請先旋轉這些憑證。
+
 ## Coolify 部署教學
 ### 後端服務
 - Build context：`plant_care_backend`
 - Dockerfile：`plant_care_backend/Dockerfile`
 - Exposed port：`8000`
 - Healthcheck path：`/health`
+- 容器啟動流程：`entrypoint.sh` 會先執行 `alembic upgrade head`，再啟動 `uvicorn`
+- 建議將 `plant_care_backend/.env` 留在本機，不要上傳；正式值統一在 Coolify 的環境變數介面設定
 
 ### 建議的後端環境變數
 - 必填：`DATABASE_URL`、`JWT_SECRET`
 - 建議：`CORS_ALLOW_ORIGINS`（正式環境請不要用 `*`）
 - 可選（AI）：`OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`
+- 可選（寄信）：`EMAIL_BACKEND`、`SMTP_HOST`、`SMTP_PORT`、`SMTP_USERNAME`、`SMTP_PASSWORD`、`SMTP_FROM`、`SMTP_FROM_NAME`
+- 正式環境請務必使用強隨機 `JWT_SECRET`，不要保留 `change-me` 類型的 placeholder
 
 ### AI 串接與更換供應商
 - 本專案後端使用「OpenAI 相容協定」呼叫 AI，因此只要供應商支援該協定即可透過調整 `OPENAI_BASE_URL` 切換。
 - 例：`OPENAI_BASE_URL=https://free.v36.cm` 或 `OPENAI_BASE_URL=https://api.v36.cm`
+
+## 正式建置範例
+### Android APK
+```bash
+cd plant_care_app
+flutter build apk --release --dart-define=API_BASE_URL=https://api.example.com
+```
+
+### iOS（不簽章）
+```bash
+cd plant_care_app
+flutter build ios --no-codesign --dart-define=API_BASE_URL=https://api.example.com
+```
+
+### Android release 簽章
+- `plant_care_app/android/key.properties` 不要進 Git；可參考 `plant_care_app/android/key.properties.example`
+- 若未提供 `key.properties`，Android release 會退回 debug signing，僅適合本機驗證，不適合正式上架
 
 ## 前端 / 後端詳細文件連結
 - 前端：[plant_care_app/README.md](https://github.com/Felix-Project-Hub/Plant_Care/blob/main/plant_care_app/README.md)

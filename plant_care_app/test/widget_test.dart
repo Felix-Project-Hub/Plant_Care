@@ -9,9 +9,10 @@ void main() {
   testWidgets('App 啟動時顯示啟動畫面', (WidgetTester tester) async {
     // 建立 APP 並觸發一幀
     await tester.pumpWidget(const MyApp());
+    await tester.pump();
 
     // 驗證 LaunchGate 顯示主要元素
-    expect(find.text('Plant Care'), findsOneWidget);
+    expect(find.text('Plant'), findsOneWidget);
     expect(find.text('Care for your green friends'), findsOneWidget);
   });
 }

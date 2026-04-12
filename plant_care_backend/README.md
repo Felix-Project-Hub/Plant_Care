@@ -75,17 +75,27 @@ curl -s http://127.0.0.1:8000/health
 - `SMTP_USE_TLS`：是否使用 STARTTLS（`true/false`）
 - `SMTP_USE_SSL`：是否使用 SMTPS（`true/false`，與 TLS 二擇一）
 - `SMTP_TIMEOUT_SECONDS`：SMTP 連線逾時秒數
+- `.env` 僅建議本機開發使用；正式部署請改由平台環境變數注入
+- `.env.example` 可公開，真實金鑰或 SMTP 密碼不要寫進 repo
+- 若開發期 `.env` 曾使用真實金鑰，正式部署前請先旋轉這批憑證
 
 ## 建置 / 啟動方式
 - 開發：`uvicorn app.main:app`
 - 部署：`Dockerfile`
 - 本機容器測試：專案內含 `docker-compose.yml`（API + PostgreSQL，並對外暴露 `8000` 與 `5433`）
+- Docker build context 已透過 `.dockerignore` 排除 `.env`、`.venv`、本機 DB 與測試快取
 
 ## 部署細節
 ### Coolify
 - 建議在 Coolify 建立 PostgreSQL，並將連線字串注入 `DATABASE_URL`
 - 正式環境請使用強隨機 `JWT_SECRET`
 - 建議設定 `CORS_ALLOW_ORIGINS` 鎖定前端網域（避免 `*`）
+- Build context：`plant_care_backend`
+- Dockerfile：`plant_care_backend/Dockerfile`
+- Exposed port：`8000`
+- Healthcheck path：`/health`
+- 容器啟動時會先執行 migration，再啟動 API
+- SMTP 相關設定為可選；若要啟用 `EMAIL_BACKEND=smtp`，請一併提供完整 SMTP 參數
 
 ### AI 供應商切換
 後端使用 OpenAI 相容協定外呼，透過調整 `OPENAI_BASE_URL` 可切換供應商。

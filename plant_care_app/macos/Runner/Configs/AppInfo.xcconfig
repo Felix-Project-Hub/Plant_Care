@@ -8,7 +8,7 @@
 PRODUCT_NAME = Plant Care
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.plant
+PRODUCT_BUNDLE_IDENTIFIER = com.beioverworked.plantcare
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.

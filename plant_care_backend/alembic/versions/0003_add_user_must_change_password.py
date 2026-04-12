@@ -3,7 +3,7 @@ from __future__ import annotations
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0003_add_user_must_change_password"
+revision = "0003_must_change_psw"
 down_revision = "0002_add_user_points"
 branch_labels = None
 depends_on = None

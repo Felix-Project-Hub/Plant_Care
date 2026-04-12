@@ -61,11 +61,12 @@ class _ForceChangePasswordPageState extends State<ForceChangePasswordPage> {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: const Text('修改密碼'),
+          title: const Text('Change Password'),
           actions: [
-            TextButton(
+            IconButton(
               onPressed: _loading ? null : _logout,
-              child: const Text('登出'),
+              icon: const Icon(Icons.logout),
+              tooltip: 'Log out',
             ),
           ],
         ),
@@ -99,7 +100,7 @@ class _ForceChangePasswordPageState extends State<ForceChangePasswordPage> {
                       ),
                       const SizedBox(height: 20),
                       const Text(
-                        '你的帳號已完成密碼重設，請先修改密碼才能繼續使用。',
+                        'Your password has been reset. Please change your password to continue.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 15,
@@ -111,16 +112,18 @@ class _ForceChangePasswordPageState extends State<ForceChangePasswordPage> {
                       const SizedBox(height: 24),
                       CustomTextField(
                         controller: _old,
-                        label: '臨時密碼（舊密碼）',
+                        label: 'Temporary password (old password)',
                         obscureText: true,
-                        validator: (v) =>
-                            requiredValidator(v?.trim() ?? '', label: '臨時密碼'),
+                        validator: (v) => requiredValidator(
+                          v?.trim() ?? '',
+                          label: 'Temporary password',
+                        ),
                         prefixIcon: Icons.lock_outline,
                       ),
                       const SizedBox(height: 16),
                       CustomTextField(
                         controller: _next,
-                        label: '新密碼',
+                        label: 'New password',
                         obscureText: true,
                         validator: (v) => passwordValidator(v ?? ''),
                         prefixIcon: Icons.lock_reset_outlined,
@@ -128,7 +131,7 @@ class _ForceChangePasswordPageState extends State<ForceChangePasswordPage> {
                       const SizedBox(height: 16),
                       CustomTextField(
                         controller: _confirm,
-                        label: '確認新密碼',
+                        label: 'Confirm new password',
                         obscureText: true,
                         validator: (v) =>
                             confirmPasswordValidator(v ?? '', _next.text),
@@ -136,7 +139,7 @@ class _ForceChangePasswordPageState extends State<ForceChangePasswordPage> {
                       ),
                       const SizedBox(height: 22),
                       CustomButton(
-                        text: '更新密碼',
+                        text: 'Update password',
                         loading: _loading,
                         onPressed: _submit,
                         icon: Icons.check_circle_outline,

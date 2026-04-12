@@ -48,6 +48,7 @@ def send_reset_password_email(*, to_email: str, temp_password: str) -> None:
         ) as server:
             _smtp_login(server)
             server.send_message(msg)
+            print("EMAIL_SENT via=smtp_ssl")
         return
 
     with smtplib.SMTP(
@@ -59,6 +60,7 @@ def send_reset_password_email(*, to_email: str, temp_password: str) -> None:
             server.starttls()
         _smtp_login(server)
         server.send_message(msg)
+        print("EMAIL_SENT via=smtp")
 
 
 def _smtp_login(server: smtplib.SMTP) -> None:
