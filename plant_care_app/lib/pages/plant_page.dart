@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../config/constants.dart';
 import '../services/api_service.dart';
 import '../utils/tools.dart';
+import 'plant_edit_page.dart';
 
 class PlantPage extends StatefulWidget {
   final Map<String, dynamic> plant;
@@ -320,6 +321,35 @@ class _PlantPageState extends State<PlantPage> {
     });
   }
 
+  Future<void> _openEdit() async {
+    final result = await Navigator.of(context).push<dynamic>(
+      MaterialPageRoute(builder: (_) => PlantEditPage(plant: _plant)),
+    );
+    if (!mounted) return;
+    if (result == null) return;
+
+    if (result is Map && result['deleted'] == true) {
+      _dirty = true;
+      Navigator.of(context).pop(true);
+      return;
+    }
+
+    if (result is Map<String, dynamic>) {
+      setState(() {
+        _plant = Map<String, dynamic>.from(result);
+        _dirty = true;
+      });
+      return;
+    }
+
+    if (result == true) {
+      await _runBusy<void>(() async {
+        await _refreshPlantFromServer();
+        _dirty = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final plantName = (_plant['plant_variety'] ?? '').toString();
@@ -447,7 +477,19 @@ class _PlantPageState extends State<PlantPage> {
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.cardBg,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: AppShadows.soft,
+            ),
+            child: IconButton(
+              tooltip: 'Edit',
+              icon: const Icon(Icons.edit_rounded, size: 22),
+              onPressed: _busy ? null : _openEdit,
+              color: AppColors.textSecondary,
+            ),
+          ),
         ],
       ),
     );

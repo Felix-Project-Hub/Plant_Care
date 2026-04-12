@@ -17,6 +17,7 @@ from app.schemas import (
     ApiMessage,
     AiGenerateTasksRequest,
     PlantCreateRequest,
+    PlantDeleteRequest,
     PlantDetail,
     PlantGetInfoRequest,
     PlantInitializeRequest,
@@ -24,6 +25,7 @@ from app.schemas import (
     PlantPublic,
     PlantSummary,
     PlantSummaryListResponse,
+    PlantUpdateRequest,
     PlantUpdateTaskRequest,
 )
 from app.utils.datetime import parse_ymd, parse_ymdhms
@@ -132,28 +134,6 @@ def list_plants(
     return PlantSummaryListResponse(results=results)
 
 
-@router.get("/{plant_uuid}", response_model=PlantDetail)
-def get_plant_detail(
-    plant_uuid: str,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> PlantDetail:
-    plant = db.scalar(select(Plant).where(Plant.uuid == plant_uuid, Plant.user_id == user.id))
-    if plant is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plant not found")
-    return PlantDetail(
-        uuid=plant.uuid,
-        plant_variety=plant.plant_variety,
-        plant_name=plant.plant_name,
-        plant_state=plant.plant_state,
-        setup_time=_fmt_ymd(plant.setup_time),
-        initialization=_fmt_ymd(plant.initialization) if plant.initialization else None,
-        today_state=plant.today_state,
-        last_watering_time=_fmt_ymdhms(plant.last_watering_time) if plant.last_watering_time else None,
-        task=plant.task,
-    )
-
-
 @router.post("/create_plant", response_model=ApiMessage)
 def create_plant(
     payload: PlantCreateRequest,
@@ -177,6 +157,80 @@ def create_plant(
     db.add(plant)
     db.commit()
     return ApiMessage(message="Plant created")
+
+
+@router.post("/update_plant", response_model=PlantDetail)
+def update_plant(
+    payload: PlantUpdateRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> PlantDetail:
+    _enforce_email(user, str(payload.email) if payload.email else None)
+    plant = db.scalar(select(Plant).where(Plant.uuid == payload.uuid, Plant.user_id == user.id))
+    if plant is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plant not found")
+
+    try:
+        setup_time = parse_ymd(payload.setup_time)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid setup_time")
+
+    plant.plant_variety = payload.plant_variety
+    plant.plant_name = payload.plant_name
+    plant.plant_state = payload.plant_state
+    plant.setup_time = setup_time
+
+    db.commit()
+    db.refresh(plant)
+    return PlantDetail(
+        uuid=plant.uuid,
+        plant_variety=plant.plant_variety,
+        plant_name=plant.plant_name,
+        plant_state=plant.plant_state,
+        setup_time=_fmt_ymd(plant.setup_time),
+        initialization=_fmt_ymd(plant.initialization) if plant.initialization else None,
+        today_state=plant.today_state,
+        last_watering_time=_fmt_ymdhms(plant.last_watering_time) if plant.last_watering_time else None,
+        task=plant.task,
+    )
+
+
+@router.post("/delete_plant", response_model=ApiMessage)
+def delete_plant(
+    payload: PlantDeleteRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiMessage:
+    _enforce_email(user, str(payload.email) if payload.email else None)
+    plant = db.scalar(select(Plant).where(Plant.uuid == payload.uuid, Plant.user_id == user.id))
+    if plant is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plant not found")
+
+    db.delete(plant)
+    db.commit()
+    return ApiMessage(message="Plant deleted")
+
+
+@router.get("/{plant_uuid}", response_model=PlantDetail)
+def get_plant_detail(
+    plant_uuid: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> PlantDetail:
+    plant = db.scalar(select(Plant).where(Plant.uuid == plant_uuid, Plant.user_id == user.id))
+    if plant is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plant not found")
+    return PlantDetail(
+        uuid=plant.uuid,
+        plant_variety=plant.plant_variety,
+        plant_name=plant.plant_name,
+        plant_state=plant.plant_state,
+        setup_time=_fmt_ymd(plant.setup_time),
+        initialization=_fmt_ymd(plant.initialization) if plant.initialization else None,
+        today_state=plant.today_state,
+        last_watering_time=_fmt_ymdhms(plant.last_watering_time) if plant.last_watering_time else None,
+        task=plant.task,
+    )
 
 
 @router.post("/initialize_plant", response_model=PlantDetail)

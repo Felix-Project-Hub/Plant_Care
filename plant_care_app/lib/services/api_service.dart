@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import '../config/constants.dart';
+import '../utils/auth_guard.dart';
 import '../utils/session.dart';
 
 class ApiService {
@@ -43,11 +44,16 @@ class ApiService {
           .post(url, headers: headers, body: body)
           .timeout(const Duration(seconds: 15));
 
-      if (res.statusCode == 401 && retryOn401 && Session.refreshToken != null) {
-        final ok = await _refreshTokens();
-        if (ok) {
-          return _post(url, body: body, auth: auth, retryOn401: false);
+      if ((res.statusCode == 401 || res.statusCode == 403) && auth) {
+        if (res.statusCode == 401 &&
+            retryOn401 &&
+            Session.refreshToken != null) {
+          final ok = await _refreshTokens();
+          if (ok) {
+            return _post(url, body: body, auth: auth, retryOn401: false);
+          }
         }
+        await AuthGuard.forceLogin();
       }
 
       return res;
@@ -76,11 +82,16 @@ class ApiService {
           .get(url, headers: headers)
           .timeout(const Duration(seconds: 15));
 
-      if (res.statusCode == 401 && retryOn401 && Session.refreshToken != null) {
-        final ok = await _refreshTokens();
-        if (ok) {
-          return _get(url, auth: auth, retryOn401: false);
+      if ((res.statusCode == 401 || res.statusCode == 403) && auth) {
+        if (res.statusCode == 401 &&
+            retryOn401 &&
+            Session.refreshToken != null) {
+          final ok = await _refreshTokens();
+          if (ok) {
+            return _get(url, auth: auth, retryOn401: false);
+          }
         }
+        await AuthGuard.forceLogin();
       }
 
       return res;
@@ -111,7 +122,9 @@ class ApiService {
     final newRefreshToken = data['refresh_token']?.toString();
     final accessExpiresAtRaw = data['access_expires_at']?.toString();
     final accessExpiresAt =
-        accessExpiresAtRaw == null ? null : DateTime.tryParse(accessExpiresAtRaw);
+        accessExpiresAtRaw == null
+            ? null
+            : DateTime.tryParse(accessExpiresAtRaw);
     if (accessToken == null ||
         newRefreshToken == null ||
         accessExpiresAt == null ||
@@ -144,19 +157,27 @@ class ApiService {
     final user = data['user'] as Map<String, dynamic>?;
     final tokens = data['tokens'] as Map<String, dynamic>?;
     if (user == null || tokens == null) {
-      throw ApiException(message: 'Invalid server response', code: res.statusCode);
+      throw ApiException(
+        message: 'Invalid server response',
+        code: res.statusCode,
+      );
     }
     final accessToken = tokens['access_token']?.toString();
     final refreshToken = tokens['refresh_token']?.toString();
     final accessExpiresAtRaw = tokens['access_expires_at']?.toString();
     final accessExpiresAt =
-        accessExpiresAtRaw == null ? null : DateTime.tryParse(accessExpiresAtRaw);
+        accessExpiresAtRaw == null
+            ? null
+            : DateTime.tryParse(accessExpiresAtRaw);
     if (accessToken == null ||
         refreshToken == null ||
         accessExpiresAt == null ||
         accessToken.isEmpty ||
         refreshToken.isEmpty) {
-      throw ApiException(message: 'Invalid token response', code: res.statusCode);
+      throw ApiException(
+        message: 'Invalid token response',
+        code: res.statusCode,
+      );
     }
     await Session.setAuth(
       email: (user['email'] ?? email).toString(),
@@ -190,19 +211,27 @@ class ApiService {
     final user = data['user'] as Map<String, dynamic>?;
     final tokens = data['tokens'] as Map<String, dynamic>?;
     if (user == null || tokens == null) {
-      throw ApiException(message: 'Invalid server response', code: res.statusCode);
+      throw ApiException(
+        message: 'Invalid server response',
+        code: res.statusCode,
+      );
     }
     final accessToken = tokens['access_token']?.toString();
     final refreshToken = tokens['refresh_token']?.toString();
     final accessExpiresAtRaw = tokens['access_expires_at']?.toString();
     final accessExpiresAt =
-        accessExpiresAtRaw == null ? null : DateTime.tryParse(accessExpiresAtRaw);
+        accessExpiresAtRaw == null
+            ? null
+            : DateTime.tryParse(accessExpiresAtRaw);
     if (accessToken == null ||
         refreshToken == null ||
         accessExpiresAt == null ||
         accessToken.isEmpty ||
         refreshToken.isEmpty) {
-      throw ApiException(message: 'Invalid token response', code: res.statusCode);
+      throw ApiException(
+        message: 'Invalid token response',
+        code: res.statusCode,
+      );
     }
     await Session.setAuth(
       email: (user['email'] ?? email).toString(),
@@ -248,7 +277,10 @@ class ApiService {
     if (phone != null) payload['phone'] = phone.trim();
     if (birthday != null) payload['birthday'] = birthday.trim();
 
-    final res = await _post(_auth('/update_profile'), body: jsonEncode(payload));
+    final res = await _post(
+      _auth('/update_profile'),
+      body: jsonEncode(payload),
+    );
     final user = _json(res);
     await Session.setUserInfo(
       email: user['email']?.toString(),
@@ -264,25 +296,35 @@ class ApiService {
   }) async {
     final res = await _post(
       _auth('/change_password'),
-      body: jsonEncode({'old_password': oldPassword, 'new_password': newPassword}),
+      body: jsonEncode({
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      }),
     );
     final data = _json(res);
     final accessToken = data['access_token']?.toString();
     final refreshToken = data['refresh_token']?.toString();
     final accessExpiresAtRaw = data['access_expires_at']?.toString();
     final accessExpiresAt =
-        accessExpiresAtRaw == null ? null : DateTime.tryParse(accessExpiresAtRaw);
+        accessExpiresAtRaw == null
+            ? null
+            : DateTime.tryParse(accessExpiresAtRaw);
     if (accessToken == null ||
         refreshToken == null ||
         accessExpiresAt == null ||
         accessToken.isEmpty ||
         refreshToken.isEmpty) {
-      throw ApiException(message: 'Invalid token response', code: res.statusCode);
+      throw ApiException(
+        message: 'Invalid token response',
+        code: res.statusCode,
+      );
     }
-    await Session.setTokens(
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-      accessExpiresAt: accessExpiresAt,
+    unawaited(
+      Session.setTokens(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        accessExpiresAt: accessExpiresAt,
+      ).catchError((_) {}),
     );
   }
 
@@ -330,10 +372,11 @@ class ApiService {
     final data = _jsonAny(res);
     if (data is Map<String, dynamic>) {
       final list = (data['results'] as List?) ?? const [];
-      final normalized = list
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .map(_normalizePlant)
-          .toList();
+      final normalized =
+          list
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .map(_normalizePlant)
+              .toList();
       return normalized;
     }
     if (data is List) {
@@ -345,7 +388,9 @@ class ApiService {
     return [];
   }
 
-  static Future<Map<String, dynamic>> getPlantDetail({required String uuid}) async {
+  static Future<Map<String, dynamic>> getPlantDetail({
+    required String uuid,
+  }) async {
     final res = await _get(_plant('/$uuid'));
     return _json(res);
   }
@@ -409,6 +454,43 @@ class ApiService {
     }
     if (data is Map<String, dynamic>) return data;
     return {'message': 'OK', 'data': data};
+  }
+
+  static Future<Map<String, dynamic>> updatePlant({
+    required String uuid,
+    required String plantVariety,
+    required String plantName,
+    required String plantState,
+    required String setupTime, // YYYYMMDD
+  }) async {
+    final email = Session.email;
+    if (email == null || email.isEmpty) {
+      throw ApiException(message: 'Unauthorized', code: 401);
+    }
+    final state = plantState.trim().toLowerCase();
+    final url = _plant('/update_plant');
+    final payload = {
+      'uuid': uuid.trim(),
+      'plant_variety': plantVariety.trim(),
+      'plant_name': plantName.trim(),
+      'plant_state': state,
+      'setup_time': setupTime.trim(),
+      'email': email.trim(),
+    };
+    final res = await _post(url, body: jsonEncode(payload));
+    return _json(res);
+  }
+
+  static Future<void> deletePlant({required String uuid}) async {
+    final email = Session.email;
+    if (email == null || email.isEmpty) {
+      throw ApiException(message: 'Unauthorized', code: 401);
+    }
+    final res = await _post(
+      _plant('/delete_plant'),
+      body: jsonEncode({'uuid': uuid.trim(), 'email': email.trim()}),
+    );
+    _json(res);
   }
 
   /// 初始化植物（拿任務）
@@ -513,7 +595,9 @@ class ApiService {
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw ApiException(
         message:
-            data['message']?.toString() ?? data['detail']?.toString() ?? 'Request failed',
+            data['message']?.toString() ??
+            data['detail']?.toString() ??
+            'Request failed',
         code: res.statusCode,
       );
     }

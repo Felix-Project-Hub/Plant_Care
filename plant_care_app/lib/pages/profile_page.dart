@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../config/constants.dart';
 import '../services/api_service.dart';
@@ -23,6 +24,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   bool _loading = false;
   bool _saving = false;
+  bool _deletingAccount = false;
+  bool _changingPassword = false;
 
   @override
   void initState() {
@@ -132,32 +135,14 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _onChangePassword() async {
-    final oldCtrl = TextEditingController();
-    final newCtrl = TextEditingController();
-    final confirmCtrl = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    bool submitting = false;
+    String oldDraft = '';
+    String newDraft = '';
+    String confirmDraft = '';
+    String? oldError;
+    String? newError;
+    String? confirmError;
 
-    Future<void> submit(StateSetter setState) async {
-      if (!formKey.currentState!.validate()) return;
-      setState(() => submitting = true);
-      try {
-        await ApiService.changePassword(
-          oldPassword: oldCtrl.text,
-          newPassword: newCtrl.text,
-        );
-        if (!mounted) return;
-        Navigator.of(context).pop();
-        showSnack(context, 'Password updated');
-      } catch (e) {
-        if (!mounted) return;
-        await showAlert(context, e.toString(), title: 'Update Failed');
-      } finally {
-        if (mounted) setState(() => submitting = false);
-      }
-    }
-
-    await showDialog<void>(
+    final payload = await showDialog<Map<String, String>?>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
@@ -165,50 +150,63 @@ class _ProfilePageState extends State<ProfilePage> {
           builder: (ctx, setState) {
             return AlertDialog(
               title: const Text('Change Password'),
-              content: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: oldCtrl,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Old password',
-                      ),
-                      validator:
-                          (v) => requiredValidator(v, label: 'Old password'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    obscureText: true,
+                    onChanged: (v) => oldDraft = v,
+                    decoration: InputDecoration(
+                      labelText: 'Old password',
+                      errorText: oldError,
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: newCtrl,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'New password',
-                      ),
-                      validator: passwordValidator,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    obscureText: true,
+                    onChanged: (v) => newDraft = v,
+                    decoration: InputDecoration(
+                      labelText: 'New password',
+                      errorText: newError,
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: confirmCtrl,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Confirm new password',
-                      ),
-                      validator:
-                          (v) => confirmPasswordValidator(v, newCtrl.text),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    obscureText: true,
+                    onChanged: (v) => confirmDraft = v,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm new password',
+                      errorText: confirmError,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               actions: [
                 TextButton(
-                  onPressed: submitting ? null : () => Navigator.of(ctx).pop(),
+                  onPressed: () => Navigator.of(ctx).pop(null),
                   child: const Text('Cancel'),
                 ),
                 TextButton(
-                  onPressed: submitting ? null : () => submit(setState),
-                  child: Text(submitting ? 'Working...' : 'Confirm'),
+                  onPressed: () {
+                    final o = oldDraft;
+                    final n = newDraft;
+                    final c = confirmDraft;
+
+                    final oe = requiredValidator(o, label: 'Old password');
+                    final ne = passwordValidator(n);
+                    final ce = confirmPasswordValidator(c, n);
+
+                    setState(() {
+                      oldError = oe;
+                      newError = ne;
+                      confirmError = ce;
+                    });
+
+                    if (oe != null || ne != null || ce != null) return;
+
+                    Navigator.of(ctx).pop({'old': o, 'new': n});
+                  },
+                  child: const Text('Confirm'),
                 ),
               ],
             );
@@ -217,34 +215,28 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
 
-    oldCtrl.dispose();
-    newCtrl.dispose();
-    confirmCtrl.dispose();
+    if (payload == null) return;
+    if (!mounted) return;
+
+    setState(() => _changingPassword = true);
+    try {
+      await ApiService.changePassword(
+        oldPassword: payload['old'] ?? '',
+        newPassword: payload['new'] ?? '',
+      ).timeout(const Duration(seconds: 12));
+      if (!mounted) return;
+      showSnack(context, 'Password updated');
+    } catch (e) {
+      if (!mounted) return;
+      await showAlert(context, e.toString(), title: 'Update Failed');
+    } finally {
+      if (mounted) {
+        setState(() => _changingPassword = false);
+      }
+    }
   }
 
   Future<void> _onDeleteAccount() async {
-    final passwordCtrl = TextEditingController();
-    bool submitting = false;
-
-    Future<void> submit(StateSetter setState) async {
-      if (passwordCtrl.text.isEmpty) return;
-      setState(() => submitting = true);
-      try {
-        await ApiService.deleteAccount(password: passwordCtrl.text);
-        await Session.clear();
-        if (!mounted) return;
-        Navigator.of(context, rootNavigator: true).pop();
-        Navigator.of(
-          context,
-          rootNavigator: true,
-        ).pushNamedAndRemoveUntil('/login', (_) => false);
-      } catch (e) {
-        if (!mounted) return;
-        await showAlert(context, e.toString(), title: 'Delete Failed');
-        if (mounted) setState(() => submitting = false);
-      }
-    }
-
     final ok = await confirmDialog(
       context,
       title: 'Delete Account',
@@ -255,7 +247,9 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!ok) return;
     if (!mounted) return;
 
-    await showDialog<void>(
+    String passwordDraft = '';
+    String? errorText;
+    final password = await showDialog<String?>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
@@ -264,19 +258,29 @@ class _ProfilePageState extends State<ProfilePage> {
             return AlertDialog(
               title: const Text('Enter password to delete account'),
               content: TextField(
-                controller: passwordCtrl,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
+                onChanged: (v) => passwordDraft = v,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  errorText: errorText,
+                ),
               ),
               actions: [
                 TextButton(
-                  onPressed: submitting ? null : () => Navigator.of(ctx).pop(),
+                  onPressed: () => Navigator.of(ctx).pop(null),
                   child: const Text('Cancel'),
                 ),
                 TextButton(
-                  onPressed: submitting ? null : () => submit(setState),
+                  onPressed: () {
+                    final value = passwordDraft.trim();
+                    if (value.isEmpty) {
+                      setState(() => errorText = 'Password is required');
+                      return;
+                    }
+                    Navigator.of(ctx).pop(value);
+                  },
                   style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                  child: Text(submitting ? 'Working...' : 'Delete'),
+                  child: const Text('Delete'),
                 ),
               ],
             );
@@ -285,7 +289,50 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
 
-    passwordCtrl.dispose();
+    if (password == null || password.isEmpty) return;
+    if (!mounted) return;
+
+    setState(() => _deletingAccount = true);
+    try {
+      try {
+        await ApiService.deleteAccount(
+          password: password,
+        ).timeout(const Duration(seconds: 12));
+      } on TimeoutException {
+        var deleted = false;
+        for (var i = 0; i < 4; i++) {
+          try {
+            await ApiService.me().timeout(const Duration(seconds: 2));
+          } on ApiException catch (e) {
+            if (e.code == 401) {
+              deleted = true;
+              break;
+            }
+          }
+          if (i < 3) {
+            await Future<void>.delayed(const Duration(milliseconds: 500));
+          }
+        }
+        if (!deleted) {
+          rethrow;
+        }
+      }
+
+      if (!mounted) return;
+      unawaited(Session.clear().catchError((_) {}));
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).pushNamedAndRemoveUntil('/login', (_) => false);
+      return;
+    } catch (e) {
+      if (!mounted) return;
+      await showAlert(context, e.toString(), title: 'Delete Failed');
+    } finally {
+      if (mounted) {
+        setState(() => _deletingAccount = false);
+      }
+    }
   }
 
   Widget _buildHeader() {
@@ -338,6 +385,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final busy = _deletingAccount || _changingPassword;
+    final busyText =
+        _deletingAccount ? 'Deleting account...' : 'Updating password...';
     return Scaffold(
       body: Stack(
         children: [
@@ -389,8 +439,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           )
                           : LayoutBuilder(
                             builder: (context, constraints) {
-                              return SingleChildScrollView(
-                                physics: const AlwaysScrollableScrollPhysics(),
+                              return Padding(
                                 padding: AppSpacing.pagePadding,
                                 child: ConstrainedBox(
                                   constraints: BoxConstraints(
@@ -405,6 +454,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                         key: _form,
                                         child: Column(
                                           mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           crossAxisAlignment:
                                               CrossAxisAlignment.stretch,
                                           children: [
@@ -478,7 +529,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                             CustomButton(
                                               text: 'Save',
                                               icon: Icons.save_outlined,
-                                              onPressed: _onSave,
+                                              onPressed: busy ? null : _onSave,
                                               loading: _saving,
                                             ),
                                             const SizedBox(height: 12),
@@ -486,11 +537,17 @@ class _ProfilePageState extends State<ProfilePage> {
                                               text: 'Change Password',
                                               icon: Icons.lock_reset_outlined,
                                               outlined: true,
-                                              onPressed: _onChangePassword,
+                                              onPressed:
+                                                  busy
+                                                      ? null
+                                                      : _onChangePassword,
                                             ),
                                             const SizedBox(height: 24),
                                             TextButton(
-                                              onPressed: _onDeleteAccount,
+                                              onPressed:
+                                                  busy
+                                                      ? null
+                                                      : _onDeleteAccount,
                                               style: TextButton.styleFrom(
                                                 foregroundColor:
                                                     AppColors.error,
@@ -512,6 +569,32 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
           ),
+          if (busy)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Colors.black.withAlpha(90),
+                child: Center(
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 20,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(
+                            color: AppColors.deepYellow,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(busyText),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

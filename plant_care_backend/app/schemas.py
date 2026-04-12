@@ -125,6 +125,20 @@ class PlantCreateRequest(BaseModel):
     email: EmailStr | None = None
 
 
+class PlantUpdateRequest(BaseModel):
+    uuid: str
+    plant_variety: str
+    plant_name: str
+    plant_state: str
+    setup_time: str
+    email: EmailStr | None = None
+
+
+class PlantDeleteRequest(BaseModel):
+    uuid: str
+    email: EmailStr | None = None
+
+
 class PlantInitializeRequest(BaseModel):
     uuid: str
     email: EmailStr | None = None

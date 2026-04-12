@@ -188,6 +188,7 @@ class MyApp extends StatelessWidget {
       title: 'Plant Care',
       debugShowCheckedModeBanner: false,
       theme: _theme(),
+      navigatorKey: rootNavigatorKey,
       // 用 home 進 LaunchGate，判斷要進哪頁
       home: const LaunchGate(),
       routes: {

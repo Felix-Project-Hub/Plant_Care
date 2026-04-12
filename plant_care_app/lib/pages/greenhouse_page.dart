@@ -17,7 +17,6 @@ class GreenhousePage extends StatefulWidget {
 class _GreenhousePageState extends State<GreenhousePage> {
   List<Map<String, dynamic>> _plants = [];
   bool _loaded = false;
-  int _points = 0;
 
   @override
   void initState() {
@@ -40,7 +39,6 @@ class _GreenhousePageState extends State<GreenhousePage> {
       if (!mounted) return;
       setState(() {
         _plants = res;
-        _points = Session.points;
         _loaded = true;
       });
     } catch (e) {
@@ -260,7 +258,7 @@ class _GreenhousePageState extends State<GreenhousePage> {
             ),
           ),
 
-          // 點數 / 植物數量
+          // 點數
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -280,33 +278,7 @@ class _GreenhousePageState extends State<GreenhousePage> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '$_points',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.deepYellow,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.lightYellow,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.eco_rounded,
-                      size: 16,
-                      color: AppColors.deepYellow,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${_plants.length}',
+                      '${Session.points}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColors.deepYellow,

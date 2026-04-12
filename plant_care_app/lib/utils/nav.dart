@@ -1,6 +1,8 @@
 // lib/utils/nav.dart
 import 'package:flutter/material.dart';
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 Route<T> slideFromRight<T>(Widget page, {Duration duration = const Duration(milliseconds: 280)}) {
   return PageRouteBuilder<T>(
     transitionDuration: duration,

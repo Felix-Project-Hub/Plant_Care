@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../config/constants.dart';
+import '../services/api_service.dart';
+import '../utils/auth_guard.dart';
 import '../utils/session.dart';
 import '../widgets/app_logo.dart';
 
@@ -55,7 +57,19 @@ class _LaunchGateState extends State<LaunchGate>
     if (!mounted) return;
 
     if (Session.isLoggedIn) {
-      Navigator.pushReplacementNamed(context, '/home');
+      try {
+        await ApiService.me();
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/home');
+      } catch (e) {
+        if (e is ApiException && (e.code == 401 || e.code == 403)) {
+          return;
+        }
+        await AuthGuard.forceLogin(
+          title: '需要重新登入',
+          message: '無法取得帳號資料，請重新登入。',
+        );
+      }
     } else {
       Navigator.pushReplacementNamed(context, '/login');
     }
@@ -76,56 +90,42 @@ class _LaunchGateState extends State<LaunchGate>
             ],
           ),
         ),
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo 圖標
-                  const AppLogo(size: 140),
-
-                  const SizedBox(height: 32),
-
-                  // APP 名稱
-                  const Text(
-                    'Plant Care',
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                      letterSpacing: -1,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // 標語
-                  Text(
-                    'Care for your green friends',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textSecondary.withAlpha(179),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-
-                  const SizedBox(height: 60),
-
-                  // 載入指示器
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation(
-                        AppColors.deepYellow.withAlpha(179),
+        child: SafeArea(
+          child: Center(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const AppLogo(size: 140),
+                      const SizedBox(height: 32),
+                      const Text(
+                        'Plant Care',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -1,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Care for your green friends',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textSecondary.withAlpha(179),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
