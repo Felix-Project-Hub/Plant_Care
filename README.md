@@ -17,7 +17,7 @@ Plant Care
 ## 技術架構
 - 前端：Flutter（Dart）
 - 後端：FastAPI（Python）
-- 資料庫：PostgreSQL（部署建議），SQLite（本機快速測試）
+- 資料庫：PostgreSQL（本機開發與部署主要方案），SQLite（僅供快速測試）
 - 認證：JWT（Bearer）
 - AI：OpenAI 相容 API（`/v1/chat/completions` 或 `/chat/completions`）
 
@@ -26,7 +26,7 @@ Plant Care
 - `plant_care_backend/`：FastAPI 後端
 
 ## 本地測試教學
-### 後端（SQLite + Uvicorn）
+### 後端（PostgreSQL + Uvicorn）
 1) 安裝依賴
 
 ```bash
@@ -35,29 +35,38 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
-2) 套用 migration
+2) 啟動 PostgreSQL（需先啟動 Docker Desktop 或其他可用的 Docker daemon）
 
 ```bash
-DATABASE_URL=sqlite+pysqlite:///./plant_care.db JWT_SECRET=dev-secret .venv/bin/python -m alembic upgrade head
+cd plant_care_backend
+docker compose up -d db
 ```
 
-3) 啟動 API
+3) 套用 migration
 
 ```bash
-DATABASE_URL=sqlite+pysqlite:///./plant_care.db JWT_SECRET=dev-secret .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+DATABASE_URL=postgresql+psycopg://plant_care:plant_care@localhost:5433/plant_care JWT_SECRET=dev-secret .venv/bin/python -m alembic upgrade head
 ```
 
-4) 健康檢查
+4) 啟動 API
+
+```bash
+DATABASE_URL=postgresql+psycopg://plant_care:plant_care@localhost:5433/plant_care JWT_SECRET=dev-secret .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+5) 健康檢查
 
 ```bash
 curl -s http://127.0.0.1:8000/health
 ```
 
-5) 端到端 smoke 測試（不需要真的連 AI；未設定 `OPENAI_API_KEY` 時會走 fallback）
+6) 端到端 smoke 測試（不需要真的連 AI；未設定 `OPENAI_API_KEY` 時會走 fallback）
 
 ```bash
 .venv/bin/python scripts/smoke_test.py
 ```
+
+註：`scripts/smoke_test.py` 預設使用 SQLite in-memory，不會依賴本機 PostgreSQL。
 
 ### 前端（Flutter）
 1) 安裝依賴與靜態檢查

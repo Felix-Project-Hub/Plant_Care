@@ -8,8 +8,8 @@
 - SQLAlchemy
 - Alembic（DB migration）
 - JWT（Bearer）
-- PostgreSQL（部署建議）
-- SQLite（本機快速測試）
+- PostgreSQL（本機開發與部署主要方案）
+- SQLite（僅供 smoke test 與快速測試）
 - OpenAI 相容 API（`/v1/chat/completions` 或 `/chat/completions`）
 
 ## 資料夾結構
@@ -29,26 +29,33 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
-### 2) 套用 migration（SQLite）
+### 2) 啟動 PostgreSQL（需先啟動 Docker Desktop 或其他可用的 Docker daemon）
 
 ```bash
-DATABASE_URL=sqlite+pysqlite:///./plant_care.db JWT_SECRET=dev-secret .venv/bin/python -m alembic upgrade head
+cd plant_care_backend
+docker compose up -d db
 ```
 
-### 3) 啟動 API
+### 3) 套用 migration（PostgreSQL）
 
 ```bash
-DATABASE_URL=sqlite+pysqlite:///./plant_care.db JWT_SECRET=dev-secret .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+DATABASE_URL=postgresql+psycopg://plant_care:plant_care@localhost:5433/plant_care JWT_SECRET=dev-secret .venv/bin/python -m alembic upgrade head
 ```
 
-### 4) 健康檢查
+### 4) 啟動 API
+
+```bash
+DATABASE_URL=postgresql+psycopg://plant_care:plant_care@localhost:5433/plant_care JWT_SECRET=dev-secret .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+### 5) 健康檢查
 
 ```bash
 curl -s http://127.0.0.1:8000/health
 ```
 
-### 5) Smoke 測試
-用 SQLite in-memory 自動跑一輪主要 API（註冊、登入、refresh、植物 CRUD、AI 任務生成與更新、公告查詢）。
+### 6) Smoke 測試
+用 SQLite in-memory 自動跑一輪主要 API（註冊、登入、refresh、植物 CRUD、AI 任務生成與更新、公告查詢），不依賴本機 PostgreSQL。
 
 ```bash
 .venv/bin/python scripts/smoke_test.py
@@ -102,5 +109,7 @@ curl -s http://127.0.0.1:8000/health
 - 例：`OPENAI_BASE_URL=https://free.v36.cm` 或 `OPENAI_BASE_URL=https://api.v36.cm`
 
 ## 常見問題
+- 為什麼 README 還會提到 SQLite？
+  - SQLite 僅用於 `scripts/smoke_test.py` 的 in-memory 快速測試；本機開發與部署主流程都以 `PostgreSQL` 為主。
 - 沒有設定 `OPENAI_API_KEY` 會怎樣？
   - `/api/v1/ai/generate_tasks` 會回傳內建的預設任務，確保前端流程不被阻斷。
