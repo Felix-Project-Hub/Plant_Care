@@ -39,7 +39,7 @@ python3 -m venv .venv
 
 ```bash
 cd plant_care_backend
-docker compose up -d db
+docker compose -f docker-compose.dev.yml up -d db
 ```
 
 3) 套用 migration
@@ -100,7 +100,7 @@ flutter run -d macos --dart-define=API_BASE_URL=http://localhost:8000
 - `OPENAI_MODEL`：使用的模型名稱（預設 `gpt-4o-mini`）
 
 ## GitHub 上傳建議
-- 可以上傳：原始碼、平台專案檔、`pubspec.lock`、`Podfile.lock`、Alembic migration、`Dockerfile`、`docker-compose.yml`、README。
+- 可以上傳：原始碼、平台專案檔、`pubspec.lock`、`Podfile.lock`、Alembic migration、`Dockerfile`、`docker-compose.dev.yml`、README。
 - 不要上傳：任何 `.env`、`plant_care_backend/.venv/`、本機資料庫、Flutter `build/`、`.dart_tool/`、`.metadata`、IDE 暫存與測試/覆蓋率產物。
 - `plant_care_backend/.env` 僅供本機使用；正式部署請改由 Coolify 環境變數注入。
 - 若 `.env` 曾放過真實金鑰或 SMTP 密碼，部署前請先旋轉這些憑證。
@@ -113,6 +113,7 @@ flutter run -d macos --dart-define=API_BASE_URL=http://localhost:8000
 - Healthcheck path：`/health`
 - 容器啟動流程：`entrypoint.sh` 會先執行 `alembic upgrade head`，再啟動 `uvicorn`
 - 建議將 `plant_care_backend/.env` 留在本機，不要上傳；正式值統一在 Coolify 的環境變數介面設定
+- 若使用 Coolify 的 Dockerfile 部署，請勿在 `plant_care_backend/` 內保留名稱為 `docker-compose.yaml`、`docker-compose.yml`、`compose.yaml` 或 `compose.yml` 的檔案，避免被誤判成 Compose 專案
 
 ### 建議的後端環境變數
 - 必填：`DATABASE_URL`、`JWT_SECRET`

@@ -33,7 +33,7 @@ python3 -m venv .venv
 
 ```bash
 cd plant_care_backend
-docker compose up -d db
+docker compose -f docker-compose.dev.yml up -d db
 ```
 
 ### 3) 套用 migration（PostgreSQL）
@@ -89,7 +89,7 @@ curl -s http://127.0.0.1:8000/health
 ## 建置 / 啟動方式
 - 開發：`uvicorn app.main:app`
 - 部署：`Dockerfile`
-- 本機容器測試：專案內含 `docker-compose.yml`（API + PostgreSQL，並對外暴露 `8000` 與 `5433`）
+- 本機容器測試：專案內含 `docker-compose.dev.yml`（API + PostgreSQL，並對外暴露 `8000` 與 `5433`）
 - Docker build context 已透過 `.dockerignore` 排除 `.env`、`.venv`、本機 DB 與測試快取
 
 ## 部署細節
@@ -103,6 +103,7 @@ curl -s http://127.0.0.1:8000/health
 - Healthcheck path：`/health`
 - 容器啟動時會先執行 migration，再啟動 API
 - SMTP 相關設定為可選；若要啟用 `EMAIL_BACKEND=smtp`，請一併提供完整 SMTP 參數
+- 若使用 Coolify 的 Dockerfile 部署，請勿在 `plant_care_backend/` 保留名稱為 `docker-compose.yaml`、`docker-compose.yml`、`compose.yaml` 或 `compose.yml` 的檔案，避免被誤判成 Compose 專案
 
 ### AI 供應商切換
 後端使用 OpenAI 相容協定外呼，透過調整 `OPENAI_BASE_URL` 可切換供應商。
